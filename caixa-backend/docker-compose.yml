@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: caixa-db
+    environment:
+      POSTGRES_DB: caixa_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234567
+    ports:
+      - "5432:5432"
+    volumes:
+      - caixa_pgdata:/var/lib/postgresql/data
+
+volumes:
+  caixa_pgdata:
