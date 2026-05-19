@@ -21,5 +21,5 @@ server:
   port: 8080
 
 jwt:
-  secret: 123456
+  secret: caixa-sistema-jwt-secret-key-super-segura-2024-development
   expiration: 86400000
