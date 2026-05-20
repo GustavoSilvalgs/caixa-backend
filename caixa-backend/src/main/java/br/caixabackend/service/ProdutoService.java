@@ -86,6 +86,10 @@ public class ProdutoService {
                 .orElseThrow(() -> new NotFoundException("Produto não encontrado"));
     }
 
+    public Produto salvar(Produto produto) {
+        return produtoRepository.save(produto);
+    }
+
     private ProdutoResponse toResponse(Produto produto) {
         return ProdutoResponse.builder()
                 .id(produto.getId())
