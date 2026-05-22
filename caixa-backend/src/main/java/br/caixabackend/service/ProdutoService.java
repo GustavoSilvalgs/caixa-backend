@@ -35,6 +35,13 @@ public class ProdutoService {
         return toResponse(produtoRepository.save(produto));
     }
 
+    public List<ProdutoResponse> listarTodos() {
+        return produtoRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     public List<ProdutoResponse> listar() {
         return produtoRepository.findAllByAtivoTrue()
                 .stream()

@@ -35,6 +35,12 @@ public class ProdutoController {
         return ResponseEntity.ok(produtoService.buscarPorNome(nome));
     }
 
+    @GetMapping("/todos")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ProdutoResponse>> listarTodos() {
+        return ResponseEntity.ok(produtoService.listarTodos());
+    }
+
     @GetMapping("/categoria/{categoriaId}")
     public ResponseEntity<List<ProdutoResponse>> listarPorCategoria(@PathVariable Long categoriaId) {
         return ResponseEntity.ok(produtoService.listarPorCategoria(categoriaId));

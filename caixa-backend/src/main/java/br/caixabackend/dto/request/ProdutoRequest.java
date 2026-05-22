@@ -16,11 +16,11 @@ public class ProdutoRequest {
     private String imagemUrl;
 
     @NotNull(message = "Preço de custo é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Preço de custo deve ser maior que zero")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Preço de custo não pode ser negativo")
     private BigDecimal precoCusto;
 
     @NotNull(message = "Preço de venda é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Preço de venda deve ser maior que zero")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Preço de venda não pode ser negativo")
     private BigDecimal precoVenda;
 
     @NotNull(message = "Estoque atual é obrigatório")
