@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -30,6 +31,8 @@ public class RelatorioEventoResponse {
     private List<ProdutoRankingResponse> produtosMaisVendidos;
     private List<ProdutoRankingResponse> produtosMaisLucrativos;
     private List<CategoriaRankingResponse> categorias;
+
+    private Map<String, BigDecimal> receitaPorFormaPagamento;
 
     // Operadores
     private List<OperadorResumoResponse> resumoPorOperador;

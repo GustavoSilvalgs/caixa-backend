@@ -15,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,6 +71,22 @@ public class RelatorioService {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Receita por forma de pagamento
+        Map<String, BigDecimal> receitaPorFormaPagamento = vendas.stream()
+                .filter(v -> v.getTipo() == TipoVenda.NORMAL && v.getFormaPagamento() != null)
+                .collect(Collectors.groupingBy(
+                        v -> v.getFormaPagamento().name(),
+                        Collectors.reducing(BigDecimal.ZERO, Venda::getTotal, BigDecimal::add)
+                ));
+
+        vendas.stream()
+                .filter(v -> v.getTipo() == TipoVenda.FIADO && v.getFormaPagamento() != null)
+                .forEach(v -> receitaPorFormaPagamento.merge(
+                        v.getFormaPagamento().name(),
+                        v.getTotal(),
+                        BigDecimal::add
+                ));
+
         return RelatorioEventoResponse.builder()
                 .eventoId(evento.getId())
                 .eventoNome(evento.getNome())
@@ -77,6 +95,7 @@ public class RelatorioService {
                 .totalVendasNormais(totalNormais)
                 .totalVendaFiado(totalFiado)
                 .receitaTotal(receitaTotal)
+                .receitaPorFormaPagamento(receitaPorFormaPagamento)
                 .receitaRecebida(receitaRecebida)
                 .receitaPendenteFiado(receitaPendente)
                 .lucroTotal(lucroTotal)

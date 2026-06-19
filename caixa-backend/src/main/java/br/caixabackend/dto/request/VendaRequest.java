@@ -1,5 +1,6 @@
 package br.caixabackend.dto.request;
 
+import br.caixabackend.enums.FormaPagamento;
 import br.caixabackend.enums.TipoVenda;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -17,4 +18,7 @@ public class VendaRequest {
 
     @NotEmpty(message = "A venda deve ter pelo menos um item")
     private List<ItemVendaRequest> itens;
+
+    @NotNull(message = "Forma de pagamento é obrigatória")
+    private FormaPagamento formaPagamento;
 }

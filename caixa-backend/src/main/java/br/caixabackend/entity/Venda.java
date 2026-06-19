@@ -1,5 +1,6 @@
 package br.caixabackend.entity;
 
+import br.caixabackend.enums.FormaPagamento;
 import br.caixabackend.enums.StatusVenda;
 import br.caixabackend.enums.TipoVenda;
 import jakarta.persistence.*;
@@ -39,8 +40,15 @@ public class Venda {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
+    @Column(name = "numero_venda_evento", nullable = false)
+    private Integer numeroVendaEvento;
+
     @Column(name = "cliente_fiado")
     private String clienteFiado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "forma_pagamento")
+    private FormaPagamento formaPagamento;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;

@@ -41,12 +41,16 @@ public class VendaService {
         Evento evento = eventoService.getEventoAberto();
         Usuario operador = getUsuarioLogado();
 
+        int proximoNumero = vendaRepository.findMaxNumeroVendaByEvento(evento.getId()) + 1;
+
         Venda venda = Venda.builder()
                 .evento(evento)
                 .operador(operador)
                 .tipo(request.getTipo())
+                .formaPagamento(request.getFormaPagamento())
                 .status(StatusVenda.CONCLUIDA)
                 .clienteFiado(request.getClienteFiado())
+                .numeroVendaEvento(proximoNumero)
                 .total(BigDecimal.ZERO)
                 .build();
 
@@ -148,12 +152,14 @@ public class VendaService {
 
         return VendaResponse.builder()
                 .id(venda.getId())
+                .numeroVendaEvento(venda.getNumeroVendaEvento())
                 .eventoId(venda.getEvento().getId())
                 .eventoNome(venda.getEvento().getNome())
                 .operadorNome(venda.getOperador().getNome())
                 .tipo(venda.getTipo())
                 .status(venda.getStatus())
                 .total(venda.getTotal())
+                .formaPagamento(venda.getFormaPagamento())
                 .clienteFiado(venda.getClienteFiado())
                 .criadoEm(venda.getCriadoEm())
                 .itens(itens)

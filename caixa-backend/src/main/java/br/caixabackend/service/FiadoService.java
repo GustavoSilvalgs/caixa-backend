@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,17 +27,64 @@ public class FiadoService {
     private final PagamentoFiadoRepository pagamentoFiadoRepository;
 
     public List<FiadoResumoResponse> listarFiadosPorEvento(Long eventoId) {
-        return vendaRepository.findAllByEventoIdAndTipo(eventoId, TipoVenda.FIADO)
-                .stream()
-                .map(this::toResumo)
-                .toList();
+        return agruparPorCliente(
+                vendaRepository.findAllByEventoIdAndTipo(eventoId, TipoVenda.FIADO)
+        );
     }
 
     public List<FiadoResumoResponse> listarFiadosAbertos(Long eventoId) {
-        return vendaRepository.findAllByEventoIdAndTipo(eventoId, TipoVenda.FIADO)
-                .stream()
-                .map(this::toResumo)
+        return agruparPorCliente(
+                vendaRepository.findAllByEventoIdAndTipo(eventoId, TipoVenda.FIADO)
+        ).stream()
                 .filter(f -> !f.getQuitado())
+                .toList();
+    }
+
+    private List<FiadoResumoResponse> agruparPorCliente(List<Venda> vendas) {
+        return vendas.stream()
+                .collect(Collectors.groupingBy(v -> v.getClienteFiado().trim().toLowerCase()))
+                .values().stream()
+                .map(grupo -> {
+                    String clienteNome = grupo.get(0).getClienteFiado();
+
+                    BigDecimal valorTotal = grupo.stream()
+                            .map(Venda::getTotal)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    BigDecimal totalPago = grupo.stream()
+                            .map(v -> pagamentoFiadoRepository.sumValorByVendaId(v.getId()))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    BigDecimal totalRestante = valorTotal.subtract(totalPago);
+
+                    List<PagamentoFiadoResponse> pagamentos = grupo.stream()
+                            .flatMap(v -> pagamentoFiadoRepository.findAllByVendaId(v.getId())
+                                    .stream()
+                                    .map(p -> PagamentoFiadoResponse.builder()
+                                            .id(p.getId())
+                                            .vendaId(v.getId())
+                                            .clienteFiado(v.getClienteFiado())
+                                            .valorVenda(v.getTotal())
+                                            .valorPago(p.getValor())
+                                            .valorRestante(totalRestante)
+                                            .quitado(totalRestante.compareTo(BigDecimal.ZERO) <= 0)
+                                            .pagoEm(p.getPagoEm())
+                                            .observacao(p.getObservacao())
+                                            .build()))
+                            .toList();
+
+                    return FiadoResumoResponse.builder()
+                            .vendaId(grupo.get(0).getId())
+                            .clienteFiado(clienteNome)
+                            .valorTotal(valorTotal)
+                            .totalPago(totalPago)
+                            .totalRestante(totalRestante)
+                            .quitado(totalRestante.compareTo(BigDecimal.ZERO) <= 0)
+                            .criadoEm(grupo.get(0).getCriadoEm())
+                            .pagamentos(pagamentos)
+                            .build();
+                })
+                .sorted(Comparator.comparing(FiadoResumoResponse::getTotalRestante).reversed())
                 .toList();
     }
 
@@ -45,11 +94,28 @@ public class FiadoService {
     }
 
     @Transactional
-    public PagamentoFiadoResponse registrarPagamento(Long vendaId, PagamentoFiadoRequest request) {
-        Venda venda = findVendaFiado(vendaId);
+    public PagamentoFiadoResponse registrarPagamentoPorCliente(
+            Long eventoId, String cliente, PagamentoFiadoRequest request) {
 
-        BigDecimal totalPago = pagamentoFiadoRepository.sumValorByVendaId(vendaId);
-        BigDecimal restante = venda.getTotal().subtract(totalPago);
+        List<Venda> vendas = vendaRepository
+                .findAllByEventoIdAndTipo(eventoId, TipoVenda.FIADO)
+                .stream()
+                .filter(v -> v.getClienteFiado().trim().equalsIgnoreCase(cliente.trim()))
+                .toList();
+
+        if (vendas.isEmpty()) {
+            throw new NotFoundException("Cliente não encontrado: " + cliente);
+        }
+
+        BigDecimal totalPago = vendas.stream()
+                .map(v -> pagamentoFiadoRepository.sumValorByVendaId(v.getId()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal valorTotal = vendas.stream()
+                .map(Venda::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal restante = valorTotal.subtract(totalPago);
 
         if (restante.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Esta dívida já está quitada");
@@ -62,22 +128,29 @@ public class FiadoService {
             );
         }
 
+        // Registra o pagamento na primeira venda em aberto
+        Venda vendaAberta = vendas.stream()
+                .filter(v -> pagamentoFiadoRepository
+                        .sumValorByVendaId(v.getId())
+                        .compareTo(v.getTotal()) < 0)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Nenhuma venda em aberto"));
+
         PagamentoFiado pagamento = PagamentoFiado.builder()
-                .venda(venda)
+                .venda(vendaAberta)
                 .valor(request.getValor())
                 .observacao(request.getObservacao())
                 .build();
 
         PagamentoFiado salvo = pagamentoFiadoRepository.save(pagamento);
-
         BigDecimal novoTotalPago = totalPago.add(request.getValor());
-        BigDecimal novoRestante = venda.getTotal().subtract(novoTotalPago);
+        BigDecimal novoRestante = valorTotal.subtract(novoTotalPago);
 
         return PagamentoFiadoResponse.builder()
                 .id(salvo.getId())
-                .vendaId(venda.getId())
-                .clienteFiado(venda.getClienteFiado())
-                .valorVenda(venda.getTotal())
+                .vendaId(vendaAberta.getId())
+                .clienteFiado(cliente)
+                .valorVenda(valorTotal)
                 .valorPago(novoTotalPago)
                 .valorRestante(novoRestante)
                 .quitado(novoRestante.compareTo(BigDecimal.ZERO) <= 0)

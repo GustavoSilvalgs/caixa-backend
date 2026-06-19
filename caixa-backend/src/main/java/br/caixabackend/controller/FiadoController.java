@@ -34,11 +34,12 @@ public class FiadoController {
         return ResponseEntity.ok(fiadoService.buscarPorVenda(vendaId));
     }
 
-    @PostMapping("/venda/{vendaId}/pagamento")
-    public ResponseEntity<PagamentoFiadoResponse> registrarPagamento(
-            @PathVariable Long vendaId,
+    @PostMapping("/cliente/{eventoId}/pagamento")
+    public ResponseEntity<PagamentoFiadoResponse> registrarPagamentoPorCliente(
+            @PathVariable Long eventoId,
+            @RequestParam String cliente,
             @Valid @RequestBody PagamentoFiadoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(fiadoService.registrarPagamento(vendaId, request));
+                .body(fiadoService.registrarPagamentoPorCliente(eventoId, cliente, request));
     }
 }

@@ -14,4 +14,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
 
     @Query("SELECT v FROM Venda v WHERE v.evento.id = :eventoId AND v.tipo = 'FIADO' AND v.clienteFiado ILIKE %:nome%")
     List<Venda> findFiadosByEventoIdAndCliente(@Param("eventoId") Long eventoId, @Param("nome") String nome);
+
+    @Query("SELECT COALESCE(MAX(v.numeroVendaEvento), 0) FROM Venda v WHERE v.evento.id = :eventoId")
+    Integer findMaxNumeroVendaByEvento(@Param("eventoId") Long eventoId);
 }

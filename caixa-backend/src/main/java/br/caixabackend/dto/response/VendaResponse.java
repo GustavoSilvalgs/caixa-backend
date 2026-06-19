@@ -1,5 +1,6 @@
 package br.caixabackend.dto.response;
 
+import br.caixabackend.enums.FormaPagamento;
 import br.caixabackend.enums.StatusVenda;
 import br.caixabackend.enums.TipoVenda;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class VendaResponse {
     private Long id;
+    private Integer numeroVendaEvento;
     private Long eventoId;
     private String eventoNome;
     private String operadorNome;
@@ -25,4 +27,5 @@ public class VendaResponse {
     private String clienteFiado;
     private LocalDateTime criadoEm;
     private List<ItemVendaResponse> itens;
+    private FormaPagamento formaPagamento;
 }

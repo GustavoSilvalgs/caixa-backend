@@ -48,4 +48,15 @@ public class AuthService {
                 .perfil(usuario.getPerfil())
                 .build();
     }
+
+    public LoginResponse me(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return LoginResponse.builder()
+                .nome(usuario.getNome())
+                .email(usuario.getEmail())
+                .perfil(usuario.getPerfil())
+                .build();
+    }
 }
