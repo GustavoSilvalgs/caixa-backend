@@ -10,6 +10,25 @@ services:
       - "5432:5432"
     volumes:
       - caixa_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: caixa-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/caixa_db
+      DB_USER: postgres
+      DB_PASS: 1234567
+      JWT_SECRET: caixa-sistema-jwt-secret-producao-2024
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   caixa_pgdata:
